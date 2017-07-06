@@ -29,6 +29,10 @@ import rdflib
 
 pd.set_option('max_colwidth', 1000)
 
+ # load triples
+g = rdflib.Graph()
+result = g.load("http://sfsheath.github.io/roman-amphitheaters/roman-amphitheaters.geojson", format="json-ld")
+
 # namespace
 ns = {"dcterms" : "http://purl.org/dc/terms/",
       "geojson" : "https://purl.org/geojson/vocab#",
@@ -46,15 +50,95 @@ app = Flask(__name__)
 #default
 @app.route('/')
 def index():
-    return "<html><head><style></style></head><body><b>Hello</b></body></html>"
+    result = g.query("""SELECT * 
+           WHERE {
+             ?id geojson:properties[ dcterms:title ?title  ; ramphsprops:chronogroup ?chronogroup] .
+
+             OPTIONAL { ?id geojson:properties[ramphsprops:dimensions [ ramphsprops:arena-major ?arenamajor] ] }
+             OPTIONAL { ?id geojson:properties[ramphsprops:dimensions [ ramphsprops:arena-minor ?arenaminor] ] }
+             OPTIONAL { ?id geojson:properties[ramphsprops:dimensions [ ramphsprops:exterior-major ?extmajor] ] }
+             OPTIONAL { ?id geojson:properties[ramphsprops:dimensions [ ramphsprops:exterior-minor ?extminor] ] }
+             OPTIONAL { ?id geojson:properties[ramphsprops:moderncountry ?moderncountry] }
+             OPTIONAL { ?id geojson:properties[ramphsprops:province ?province] }  
+             OPTIONAL { ?id geojson:properties[ramphsprops:region ?region] }           
+     
+             } """ , initNs = ns)
+           
+    
+    rdoc = dominate.document(title="Searchable List of Roman Amphitheaters")
+    rdoc.head += meta(charset="utf-8")
+    rdoc.head += meta(http_equiv="X-UA-Compatible", content="IE=edge")
+    rdoc.head += meta(name="viewport", content="width=device-width, initial-scale=1")
+    rdoc.head += link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css")
+    rdoc.head += link(rel="stylesheet", href="https://cdn.datatables.net/1.10.15/css/dataTables.bootstrap.min.css")
+    rdoc.head += script(src="https://code.jquery.com/jquery-2.2.4.min.js")
+    rdoc.head += script(src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js")
+    rdoc.head += script(src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js")
+    rdoc.head += script(src="https://cdn.datatables.net/1.10.15/js/dataTables.bootstrap.min.js")
+    rdoc.head += script("""$(document).ready(function() {
+    $('#ramphs').DataTable( {
+        'paging':   false
+    } );
+} );""")
+    with rdoc:
+        with div(cls="container"):
+            h1("Roman Amphitheaters and Related Buildings")
+            with p():
+                span("See ")
+                a("http://github.com/sfsheath/roman-amphitheaters", href="http://github.com/sfsheath/roman-amphitheaters")
+                span(" for data and overview.")
+            with table(id="ramphs"):
+                with thead():
+                    th("Label")
+                    th("Country")
+                    th("Region or Province")
+                    th("Ext. Major")
+                    th("Ext. Minor")
+                    th("Arena Major")
+                    th("Arena Minor")
+                with tbody():
+                    for r in result:
+                        with tr():
+                            td(str(r.title))
+
+                            if str(r.moderncountry) != 'None':
+                                td(str(r.moderncountry))
+                            else:
+                                td("")
+                            
+                            if str(r.region) != 'None':
+                                td(str(r.region).replace('http://purl.org/roman-amphitheaters/resource/',''))
+                            elif str(r.province) != 'None':
+                                td(str(r.province).replace('http://purl.org/roman-amphitheaters/resource/',''))
+                            else:
+                                td("")
+
+                            if str(r.extmajor) != 'None':
+                                td(str(r.extmajor))
+                            else:
+                                td("")
+
+                            if str(r.extminor) != 'None':
+                                td(str(r.extminor))
+                            else:
+                                td("")
+
+                            if str(r.arenamajor) != 'None':
+                                td(str(r.arenamajor))
+                            else:
+                                td("")
+
+                            if str(r.arenaminor) != 'None':
+                                td(str(r.arenaminor))
+                            else:
+                                td("")
+    return rdoc.render()
+
 
 # display # of triples to show it's working
 @app.route('/ramphs/graph')
 def ramphs_graph():
     
-    # load triples
-    g = rdflib.Graph()
-    result = g.load("http://sfsheath.github.com/roman-amphitheaters/roman-amphitheaters.geojson", format="json-ld")
 
     # simple query to get a one line result that confirms basic setup is working
     result = g.query("SELECT (count(?s) as ?cnt) WHERE { ?s ?p ?o }")

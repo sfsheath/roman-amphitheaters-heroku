@@ -82,7 +82,7 @@ def index():
 } );""")
     with rdoc:
         with div(cls="container"):
-            h1("Roman Amphitheaters and Related Buildings")
+            h1("Searchable List of Roman Amphitheaters")
             with p():
                 span("See ")
                 a("http://github.com/sfsheath/roman-amphitheaters", href="http://github.com/sfsheath/roman-amphitheaters")

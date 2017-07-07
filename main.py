@@ -1,3 +1,6 @@
+# At some point I might add an actual license, until then As Is Public Domain
+
+# some clean up possible I'm sure
 import html
 
 # because dominate will stop on html

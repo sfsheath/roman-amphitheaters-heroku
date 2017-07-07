@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup
 
 import dominate
 from dominate.tags import *
+from dominate.util import raw
 
 from flask import Flask
 from flask import render_template
@@ -82,17 +83,42 @@ def index():
     rdoc.head += script(src="https://cdn.datatables.net/1.10.15/js/dataTables.bootstrap.min.js")
     
     # This is the JS that initiaties Datatables when the page is loaded. Now inside a python multi-line string
-    rdoc.head += script("""$(document).ready(function() {
+    rdoc.head += script(raw("""$(document).ready(function() {
     
-    $('#example tfoot th').each( function () {
+    $('#ramphs tfoot th').each( function () {
     var title = $(this).text();
-    $(this).html( '<input type="text" placeholder="Search '+title+'" />' );
+    $(this).html( '<input type="text" placeholder="Search '+title+'" ></input>' );
     } );
     
-    $('#ramphs').DataTable( {
+    var table = $('#ramphs').DataTable( {
+        "columnDefs": [ {
+            "searchable": false,
+            "orderable": false,
+            "targets": 0
+        } ],
         'paging':   false
     } );
-} );""")
+    
+    table.on( 'order.dt search.dt', function () {
+        table.column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+            cell.innerHTML = i+1;
+        } );
+    } ).draw();
+    
+    // Apply the search
+    table.columns().every( function () {
+        var that = this;
+ 
+        $( 'input', this.footer() ).on( 'keyup change', function () {
+            if ( that.search() !== this.value ) {
+                that
+                    .search( this.value )
+                    .draw();
+            }
+        } );
+    } );
+    
+} );"""))
 
 
     with rdoc:
@@ -101,22 +127,36 @@ def index():
             with p():
                 span("See ")
                 a("http://github.com/sfsheath/roman-amphitheaters", href="http://github.com/sfsheath/roman-amphitheaters")
-                span(" for data and overview.")
+                span(" for much more data and overview of project.")
                 
             # for now I'm rendering direct to an HTML table. Could use JSON but with only 250+ records,
             # rendering speed doesn't seem to be a problem.
             with table(id="ramphs"):
+                with colgroup():
+                    col(width=".5em")
                 with thead():
-                    th("Label")
-                    th("Country")
-                    th("Region or Province")
-                    th("Ext. Major")
-                    th("Ext. Minor")
-                    th("Arena Major")
-                    th("Arena Minor")
+                    with tr():
+                        th("")
+                        th("Label")
+                        th("Country")
+                        th("Region or Province")
+                        th("Ext. Major")
+                        th("Ext. Minor")
+                        th("Arena Major")
+                        th("Arena Minor")
+                with tfoot():
+                        th("")
+                        th("Label")
+                        th("Country")
+                        th("Region or Province")
+                        th("Ext. Major")
+                        th("Ext. Minor")
+                        th("Arena Major")
+                        th("Arena Minor")
                 with tbody():
                     for r in result:
                         with tr():
+                            td("")
                             td(str(r.title))
 
                             if str(r.moderncountry) != 'None':

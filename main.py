@@ -85,12 +85,29 @@ def index():
     # This is the JS that initiaties Datatables when the page is loaded. Now inside a python multi-line string
     rdoc.head += script(raw("""$(document).ready(function() {
     
-    $('#ramphs tfoot th').each( function () {
-    var title = $(this).text();
-    $(this).html( '<input type="text" placeholder="Search '+title+'" ></input>' );
-    } );
-    
     var table = $('#ramphs').DataTable( {
+    
+            initComplete: function () {
+            this.api().columns([2,3]).every( function () {
+                var column = this;
+                var select = $('<select><option value=""></option></select>')
+                    .appendTo( $(column.footer()).empty() )
+                    .on( 'change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+ 
+                        column
+                            .search( val ? '^'+val+'$' : '', true, false )
+                            .draw();
+                    } );
+ 
+                column.data().unique().sort().each( function ( d, j ) {
+                    select.append( '<option value="'+d+'">'+d+'</option>' )
+                } );
+            } );
+        },
+    
         "columnDefs": [ {
             "searchable": false,
             "orderable": false,
@@ -105,18 +122,6 @@ def index():
         } );
     } ).draw();
     
-    // Apply the search
-    table.columns().every( function () {
-        var that = this;
- 
-        $( 'input', this.footer() ).on( 'keyup change', function () {
-            if ( that.search() !== this.value ) {
-                that
-                    .search( this.value )
-                    .draw();
-            }
-        } );
-    } );
     
 } );"""))
 
@@ -146,13 +151,13 @@ def index():
                         th("Arena Minor")
                 with tfoot():
                         th("")
-                        th("Label")
+                        th("")
                         th("Country")
                         th("Region or Province")
-                        th("Ext. Major")
-                        th("Ext. Minor")
-                        th("Arena Major")
-                        th("Arena Minor")
+                        # th("")
+                        # th("")
+                        # th("")
+                        # th("")
                 with tbody():
                     for r in result:
                         with tr():

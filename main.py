@@ -191,6 +191,11 @@ def index():
                                 td(str(r.arenaminor))
                             else:
                                 td("")
+            with p():
+                span("See ")
+                a("https://github.com/sfsheath/roman-amphitheaters-heroku", href="https://github.com/sfsheath/roman-amphitheaters-heroku")
+                span(" for python code that generates this page.")
+   
     return rdoc.render()
     
 # display info for single amphitheater

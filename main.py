@@ -50,6 +50,8 @@ app = Flask(__name__)
 #default
 @app.route('/')
 def index():
+
+    # this is the query that gets the triples that will end up in the HTML table.
     result = g.query("""SELECT * 
            WHERE {
              ?id geojson:properties[ dcterms:title ?title  ; ramphsprops:chronogroup ?chronogroup] .
@@ -75,11 +77,21 @@ def index():
     rdoc.head += script(src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js")
     rdoc.head += script(src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js")
     rdoc.head += script(src="https://cdn.datatables.net/1.10.15/js/dataTables.bootstrap.min.js")
+    
+    # This is the JS that initiaties Datatables when the page is loaded. Now inside a python multi-line string
     rdoc.head += script("""$(document).ready(function() {
+    
+    $('#example tfoot th').each( function () {
+    var title = $(this).text();
+    $(this).html( '<input type="text" placeholder="Search '+title+'" />' );
+    } );
+    
     $('#ramphs').DataTable( {
         'paging':   false
     } );
 } );""")
+
+
     with rdoc:
         with div(cls="container"):
             h1("Searchable List of Roman Amphitheaters")
@@ -87,6 +99,9 @@ def index():
                 span("See ")
                 a("http://github.com/sfsheath/roman-amphitheaters", href="http://github.com/sfsheath/roman-amphitheaters")
                 span(" for data and overview.")
+                
+            # for now I'm rendering direct to an HTML table. Could use JSON but with only 250+ records,
+            # rendering speed doesn't seem to be a problem.
             with table(id="ramphs"):
                 with thead():
                     th("Label")
@@ -106,6 +121,7 @@ def index():
                             else:
                                 td("")
                             
+                            # combine province / region into single column since no amphitheater is both
                             if str(r.region) != 'None':
                                 td(str(r.region).replace('http://purl.org/roman-amphitheaters/resource/',''))
                             elif str(r.province) != 'None':
@@ -133,58 +149,6 @@ def index():
                             else:
                                 td("")
     return rdoc.render()
-
-
-# display # of triples to show it's working
-@app.route('/ramphs/graph')
-def ramphs_graph():
-    
-
-    # simple query to get a one line result that confirms basic setup is working
-    result = g.query("SELECT (count(?s) as ?cnt) WHERE { ?s ?p ?o }")
-    for r in result:
-        triplecnt = r.cnt
-    
-    # See https://pyformat.info for formatting python strings
-    return "Total triples after g.load: {}".format(triplecnt)
-
-# display table from mysql 
-@app.route('/ramphs/tables')
-def ramphs_tables():
-    # connect to mysql
-    connection = pymysql.connect(host='hosting.nyu.edu',
-                             user='sebastia_adsqro',
-                             password = os.environ.get('MYSQL_PW'),
-                             db='sebastia_adsq',
-                             charset='utf8mb4',
-                             cursorclass=pymysql.cursors.DictCursor)
-
-    sql = "select * from ramphs"
-    
-    # parse result so it's ready to be turned into a dataframe
-    with connection.cursor() as cursor:
-
-        cursor.execute(sql)
-        names = [ x[0] for x in cursor.description]
-        result = cursor.fetchall()
-
-    df = pd.DataFrame(result, columns = names)
-    
-    return """<html>
-<head>
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/r/bs-3.3.5/jq-2.1.4,dt-1.10.8/datatables.min.css"/>
- 
-<script type="text/javascript" src="https://cdn.datatables.net/r/bs-3.3.5/jqc-1.11.3,dt-1.10.8/datatables.min.js"></script>
-
-<script type="text/javascript">
-$(document).ready(function() {
-    $('.dataframe').DataTable();
-} );
-</script>
-
-    </head>%s</html>""" % df.to_html()
-
-    
     
 # display info for single amphitheater
 @app.route('/ramphs/id/<path:amphitheater>')

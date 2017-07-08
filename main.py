@@ -46,10 +46,8 @@ ns = {"dcterms" : "http://purl.org/dc/terms/",
       "ramphsprops" : "http://purl.org/roman-amphitheaters/properties#",
       "ramphs" :  "http://purl.org/roman-amphitheaters/resource/" }
 
-
 # initiate the webserver
 app = Flask(__name__)
-
 
 #default
 @app.route('/')
@@ -58,7 +56,7 @@ def index():
     # this is the query that gets the triples that will end up in the HTML table.
     result = g.query("""SELECT * 
            WHERE {
-             ?id geojson:properties[ dcterms:title ?title  ; ramphsprops:chronogroup ?chronogroup] .
+             ?id geojson:properties[ rdfs:label ?label  ; ramphsprops:chronogroup ?chronogroup] .
 
              OPTIONAL { ?id geojson:properties[ramphsprops:dimensions [ ramphsprops:arena-major ?arenamajor] ] }
              OPTIONAL { ?id geojson:properties[ramphsprops:dimensions [ ramphsprops:arena-minor ?arenaminor] ] }
@@ -69,26 +67,30 @@ def index():
              OPTIONAL { ?id geojson:properties[ramphsprops:region ?region] }           
      
              } """ , initNs = ns)
-           
     
+    # create a DOM and populate the head element
     rdoc = dominate.document(title="Searchable List of Roman Amphitheaters")
     rdoc.head += meta(charset="utf-8")
     rdoc.head += meta(http_equiv="X-UA-Compatible", content="IE=edge")
     rdoc.head += meta(name="viewport", content="width=device-width, initial-scale=1")
+    
+    # stylesheets
     rdoc.head += link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css")
     rdoc.head += link(rel="stylesheet", href="https://cdn.datatables.net/1.10.15/css/dataTables.bootstrap.min.css")
+
+    # js libraries
     rdoc.head += script(src="https://code.jquery.com/jquery-2.2.4.min.js")
     rdoc.head += script(src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js")
     rdoc.head += script(src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js")
     rdoc.head += script(src="https://cdn.datatables.net/1.10.15/js/dataTables.bootstrap.min.js")
     
-    # This is the JS that initiaties Datatables when the page is loaded. Now inside a python multi-line string
+    # This is the js that initiaties Datatables when the page is loaded. Now inside a python multi-line string
     rdoc.head += script(raw("""$(document).ready(function() {
     
     var table = $('#ramphs').DataTable( {
     
             initComplete: function () {
-            this.api().columns([2,3]).every( function () {
+            this.api().columns([2,3,4]).every( function () {
                 var column = this;
                 var select = $('<select><option value=""></option></select>')
                     .appendTo( $(column.footer()).empty() )
@@ -125,7 +127,6 @@ def index():
     
 } );"""))
 
-
     with rdoc:
         with div(cls="container"):
             h1("Searchable List of Roman Amphitheaters")
@@ -137,14 +138,13 @@ def index():
             # for now I'm rendering direct to an HTML table. Could use JSON but with only 250+ records,
             # rendering speed doesn't seem to be a problem.
             with table(id="ramphs"):
-                with colgroup():
-                    col(width=".5em")
                 with thead():
                     with tr():
                         th("")
                         th("Label")
                         th("Country")
                         th("Region or Province")
+                        th("Period")
                         th("Ext. Major")
                         th("Ext. Minor")
                         th("Arena Major")
@@ -154,6 +154,7 @@ def index():
                         th("")
                         th("Country")
                         th("Region or Province")
+                        th("Period")
                         # th("")
                         # th("")
                         # th("")
@@ -162,7 +163,8 @@ def index():
                     for r in result:
                         with tr():
                             td("")
-                            td(str(r.title))
+                            td(a(str(r.label),href="/ramphs/id/{}".format(str(r.id).replace('http://purl.org/roman-amphitheaters/resource/',''))))
+                            # td(str(r.label))
 
                             if str(r.moderncountry) != 'None':
                                 td(str(r.moderncountry))
@@ -174,6 +176,11 @@ def index():
                                 td(str(r.region).replace('http://purl.org/roman-amphitheaters/resource/',''))
                             elif str(r.province) != 'None':
                                 td(str(r.province).replace('http://purl.org/roman-amphitheaters/resource/',''))
+                            else:
+                                td("")
+
+                            if str(r.chronogroup) != 'None':
+                                td(str(r.chronogroup))
                             else:
                                 td("")
 
@@ -196,6 +203,7 @@ def index():
                                 td(str(r.arenaminor))
                             else:
                                 td("")
+
             with p():
                 span("See ")
                 a("https://github.com/sfsheath/roman-amphitheaters-heroku", href="https://github.com/sfsheath/roman-amphitheaters-heroku")
@@ -227,6 +235,7 @@ def ramphs_id(amphitheater):
     return """<html>
     <body>
      <h1>{}</h1>
+     <p><i>Yes, formatting will improve....</i></p>
      {}
      </body>
      </html>""".format(amphitheater, df.to_html())
@@ -275,10 +284,3 @@ def ramphs_showid():
    # basically, just redirect to the URL that can show info for a single amphitheater
    return redirect("/ramphs/id/{}".format(id), code=302)
 
-                    
-
-
-    
-    
-
-    

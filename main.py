@@ -68,7 +68,7 @@ def index():
              OPTIONAL { ?id geojson:properties[ramphsprops:province ?province] }  
              OPTIONAL { ?id geojson:properties[ramphsprops:region ?region] }           
      
-             } """ , initNs = ns)
+             } ORDER BY ?startdate ?chronogroupl DESC(?capacity)""" , initNs = ns)
     
     # create a DOM and populate the head element
     rdoc = dominate.document(title="Searchable List of Roman Amphitheaters")

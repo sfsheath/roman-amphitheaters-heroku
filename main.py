@@ -61,6 +61,7 @@ def index():
 
              OPTIONAL { ?id geojson:properties[ramphsprops:dimensions [ ramphsprops:arena-major ?arenamajor] ] }
              OPTIONAL { ?id geojson:properties[ramphsprops:dimensions [ ramphsprops:arena-minor ?arenaminor] ] }
+             OPTIONAL { ?id geojson:properties[ramphsprops:capacity   [ ramphsprops:quantity ?capacity ] ] }  
              OPTIONAL { ?id geojson:properties[ramphsprops:dimensions [ ramphsprops:exterior-major ?extmajor] ] }
              OPTIONAL { ?id geojson:properties[ramphsprops:dimensions [ ramphsprops:exterior-minor ?extminor] ] }
              OPTIONAL { ?id geojson:properties[ramphsprops:moderncountry ?moderncountry] }
@@ -146,6 +147,7 @@ def index():
                         th("Country")
                         th("Region or Province")
                         th("Period")
+                        th("Capacity")
                         th("Ext. Major")
                         th("Ext. Minor")
                         th("Arena Major")
@@ -156,10 +158,6 @@ def index():
                         th("Country")
                         th("Region or Province")
                         th("Period")
-                        # th("")
-                        # th("")
-                        # th("")
-                        # th("")
                 with tbody():
                     for r in result:
                         with tr():
@@ -186,8 +184,13 @@ def index():
                                 else:
                                     td(str(r.chronogroupl))
                             else:
-                                td("hmmm...")
+                                td("")
 
+                            if str(r.capacity) != 'None':
+                                td(str(r.capacity))
+                            else:
+                                td("")
+                                
                             if str(r.extmajor) != 'None':
                                 td(str(r.extmajor))
                             else:

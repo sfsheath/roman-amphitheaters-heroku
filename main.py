@@ -57,6 +57,7 @@ def index():
     result = g.query("""SELECT * 
            WHERE {
              ?id geojson:properties[ rdfs:label ?label  ; ramphsprops:chronogroup ?chronogroup] .
+              ?chronogroup rdfs:label ?chronogroupl ; ramphsprops:start-date ?startdate . 
 
              OPTIONAL { ?id geojson:properties[ramphsprops:dimensions [ ramphsprops:arena-major ?arenamajor] ] }
              OPTIONAL { ?id geojson:properties[ramphsprops:dimensions [ ramphsprops:arena-minor ?arenaminor] ] }
@@ -179,10 +180,13 @@ def index():
                             else:
                                 td("")
 
-                            if str(r.chronogroup) != 'None':
-                                td(str(r.chronogroup))
+                            if str(r.chronogroupl) != 'None':
+                                if str(r.startdate) != 'None':
+                                    td(str(r.chronogroupl),data_sort=str(r.startdate))
+                                else:
+                                    td(str(r.chronogroupl))
                             else:
-                                td("")
+                                td("hmmm...")
 
                             if str(r.extmajor) != 'None':
                                 td(str(r.extmajor))
@@ -214,11 +218,23 @@ def index():
 # display info for single amphitheater
 @app.route('/ramphs/id/<path:amphitheater>')
 def ramphs_id(amphitheater):
+
+    # create a DOM and populate the head element
+    rdoc = dominate.document(title="Searchable List of Roman Amphitheaters")
+    rdoc.head += meta(charset="utf-8")
+    rdoc.head += meta(http_equiv="X-UA-Compatible", content="IE=edge")
+    rdoc.head += meta(name="viewport", content="width=device-width, initial-scale=1")
     
-    # load data, but we're going to make this faster
-    g = rdflib.Graph()
-    result = g.load("http://sfsheath.github.com/roman-amphitheaters/roman-amphitheaters.geojson", format="json-ld")
-    
+    # stylesheets
+    rdoc.head += link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css")
+    rdoc.head += link(rel="stylesheet", href="https://cdn.datatables.net/1.10.15/css/dataTables.bootstrap.min.css")
+
+    # js libraries
+    rdoc.head += script(src="https://code.jquery.com/jquery-2.2.4.min.js")
+    rdoc.head += script(src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js")
+    rdoc.head += script(src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js")
+    rdoc.head += script(src="https://cdn.datatables.net/1.10.15/js/dataTables.bootstrap.min.js")
+
     result = g.query("""SELECT DISTINCT ?property ?value
            WHERE {
              { ramphs:%s geojson:properties ?props .

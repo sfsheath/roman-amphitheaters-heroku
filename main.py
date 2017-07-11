@@ -64,6 +64,7 @@ def index():
              OPTIONAL { ?id geojson:properties[ramphsprops:capacity   [ ramphsprops:quantity ?capacity ] ] }  
              OPTIONAL { ?id geojson:properties[ramphsprops:dimensions [ ramphsprops:exterior-major ?extmajor] ] }
              OPTIONAL { ?id geojson:properties[ramphsprops:dimensions [ ramphsprops:exterior-minor ?extminor] ] }
+             OPTIONAL { ?id geojson:properties[ramphsprops:latintoponym ?latintoponym] }
              OPTIONAL { ?id geojson:properties[ramphsprops:moderncountry ?moderncountry] }
              OPTIONAL { ?id geojson:properties[ramphsprops:province ?province] }  
              OPTIONAL { ?id geojson:properties[ramphsprops:region ?region] }           
@@ -92,7 +93,7 @@ def index():
     var table = $('#ramphs').DataTable( {
     
             initComplete: function () {
-            this.api().columns([2,3,4]).every( function () {
+            this.api().columns([4,5,6]).every( function () {
                 var column = this;
                 var select = $('<select><option value=""></option></select>')
                     .appendTo( $(column.footer()).empty() )
@@ -144,6 +145,7 @@ def index():
                     with tr():
                         th("")
                         th("Label")
+                        th("Latin Toponym")
                         th("Country")
                         th("Region or Province")
                         th("Period")
@@ -155,6 +157,7 @@ def index():
                 with tfoot():
                         th("")
                         th("")
+                        th("")
                         th("Country")
                         th("Region or Province")
                         th("Period")
@@ -164,6 +167,11 @@ def index():
                             td("")
                             td(a(str(r.label),href="/ramphs/id/{}".format(str(r.id).replace('http://purl.org/roman-amphitheaters/resource/',''))))
                             # td(str(r.label))
+
+                            if str(r.latintoponym) != 'None':
+                                td(str(r.latintoponym))
+                            else:
+                                td("")
 
                             if str(r.moderncountry) != 'None':
                                 td(str(r.moderncountry))
@@ -223,7 +231,7 @@ def index():
 def ramphs_id(amphitheater):
 
     # create a DOM and populate the head element
-    rdoc = dominate.document(title="Searchable List of Roman Amphitheaters")
+    rdoc = dominate.document(title="Roman Amphitheaters")
     rdoc.head += meta(charset="utf-8")
     rdoc.head += meta(http_equiv="X-UA-Compatible", content="IE=edge")
     rdoc.head += meta(name="viewport", content="width=device-width, initial-scale=1")

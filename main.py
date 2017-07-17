@@ -11,7 +11,7 @@ import re
 import urllib.parse
 import urllib.request
 
-from bs4 import BeautifulSoup
+# from bs4 import BeautifulSoup
 
 import dominate
 from dominate.tags import *
@@ -25,17 +25,18 @@ from flask import redirect, url_for, after_this_request
 import json
 import markdown
 import numpy as np
-import pandas as pd
 import pymysql.cursors
 import rdflib
 
-# pandas options
+# testing
+local_source = str(os.environ.get('GEOJSON')),
 
-pd.set_option('max_colwidth', 1000)
-
- # load triples
+# load triples from local or remote source 
 g = rdflib.Graph()
-result = g.load("http://sfsheath.github.io/roman-amphitheaters/roman-amphitheaters.geojson", format="json-ld")
+if local_source == 'local':
+    result = g.parse('roman-amphitheaters.geojson', format="json-ld")
+else:
+    result = g.load("http://sfsheath.github.io/roman-amphitheaters/roman-amphitheaters.geojson", format="json-ld")
 
 # namespace
 ns = {"dcterms" : "http://purl.org/dc/terms/",
@@ -67,7 +68,8 @@ def index():
              OPTIONAL { ?id geojson:properties[ramphsprops:latintoponym ?latintoponym] }
              OPTIONAL { ?id geojson:properties[ramphsprops:moderncountry ?moderncountry] }
              OPTIONAL { ?id geojson:properties[ramphsprops:province ?province] }  
-             OPTIONAL { ?id geojson:properties[ramphsprops:region ?region] }           
+             OPTIONAL { ?id geojson:properties[ramphsprops:region ?region] }  
+                   
      
              } ORDER BY ?startdate ?chronogroupl DESC(?capacity)""" , initNs = ns)
     
@@ -82,6 +84,7 @@ def index():
     rdoc.head += link(rel="stylesheet", href="https://cdn.datatables.net/1.10.15/css/dataTables.bootstrap.min.css")
 
     # js libraries
+    rdoc.head += comment(local_source)
     rdoc.head += script(src="https://code.jquery.com/jquery-2.2.4.min.js")
     rdoc.head += script(src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js")
     rdoc.head += script(src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js")
@@ -246,28 +249,67 @@ def ramphs_id(amphitheater):
     rdoc.head += script(src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js")
     rdoc.head += script(src="https://cdn.datatables.net/1.10.15/js/dataTables.bootstrap.min.js")
 
-    result = g.query("""SELECT DISTINCT ?property ?value
+    result = g.query("""SELECT DISTINCT ?p ?o ?plabel ?olabel
            WHERE {
-             { ramphs:%s geojson:properties ?props .
-              ?props ?property ?value . }
+             
+            { ramphs:%s geojson:properties [ ?p ?o ] }
+            UNION { ramphs:%s geojson:properties/ramphsprops:dimensions [ ?p ?o ] }
+            UNION { ramphs:%s geojson:properties/ramphsprops:capacity   [ ?p ?o ] }
+            OPTIONAL { ?p rdfs:label ?plabel }
             
-            UNION { ramphs:%s geojson:properties/ramphsprops:dimensions ?blank . ?blank ?property ?value }
-            UNION { ramphs:%s geojson:properties/ramphsprops:capacity ?blank . ?blank ?property ?value }
-            
-            FILTER (!isBlank(?value))
            } """ % (amphitheater,amphitheater,amphitheater), initNs = ns)
            
-    df = pd.DataFrame(result.bindings)
+    with rdoc:
+        with nav(cls="navbar navbar-default navbar-fixed-top"):
+           with div(cls="container-fluid"):
+               with div(cls="navbar-header"):
+                   a("Roman Amphitheaters", href="/",cls="navbar-brand")
+                   with ul(cls="nav navbar-nav"):
+                       with li(cls="dropdown"):
+                           a("Browse", href="#",cls="dropdown-toggle", data_toggle="dropdown")
+                           with ul(cls="dropdown-menu", role="menu"):
+                               li(a('Go to Pompeii', href="/ramphs/id/pompeiiAmphitheater"))
     
-    return """<html>
-    <body>
-     <h1>{}</h1>
-     <p><i>Yes, formatting will improve....</i></p>
-     {}
-     </body>
-     </html>""".format(amphitheater, df.to_html())
+        with div(cls="container", about="/ramphs/id/%s" % (amphitheater)):
+            p()
+            p()
+            p()
+            p()
+            p()
+            p()
+            with dl(cls="dl-horizontal"):
+                unescapehtml = False
+                dt()
+                #for row in elabel:
+                    # dd(strong(str(row.slabel), cls="large"))
+                dd("Label Coming", cls="large")
+                for row in result:
+                    if str(row.p) == 'http://www.w3.org/2000/01/rdf-schema#label':
+                        continue
+                    elif str(row.plabel) != 'None':
+                        dt(str(row.plabel))
+                    else:
+                        dt(i(str(row.p)))
+                
+                    with dd():
+                        if str(row.olabel) != "None":
+                            olabel = str(row.olabel)
+                        else:
+                            olabel = str(row.o)
+                        span(olabel)
 
-
+                
+        with footer(cls="footer"):
+            with div(cls="container"):
+                with p(cls="text-muted"):
+                    span("P-LOD is under construction and is overseen by Steven Ellis, Sebastian Heath and Eric Poehler. Data available on ")
+                    a("Github", href = "https://github.com/p-lod/p-lod")
+                    span(". Parse ")
+                    a('RDFa', href="http://www.w3.org/2012/pyRdfa/extract?uri=http://p-lod.herokuapp.com/p-lod/entities/%s" % (amphitheater))
+                    span(".")
+        
+    return rdoc.render()         
+        
 # display a popup list of amphitheaters
 @app.route('/ramphs/popup')
 def ramphs_popup():

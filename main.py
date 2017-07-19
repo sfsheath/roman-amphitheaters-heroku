@@ -266,11 +266,6 @@ def ramphs_id(amphitheater):
            with div(cls="container"):
                with div(cls="navbar-header"):
                    a("Roman Amphitheaters", href="/",cls="navbar-brand")
-                   with ul(cls="nav navbar-nav"):
-                       with li(cls="dropdown"):
-                           a("Go To List", href="#",cls="dropdown-toggle", data_toggle="dropdown")
-                           with ul(cls="dropdown-menu", role="menu"):
-                               li(a('Go to Pompeii', href="/ramphs/id/pompeiiAmphitheater"))
     
         with div(cls="container", about="/ramphs/id/%s" % (amphitheater)):
             with dl(cls="dl-horizontal"):

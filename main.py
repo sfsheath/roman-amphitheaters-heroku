@@ -251,15 +251,19 @@ def ramphs_id(amphitheater):
     rdoc.head += script(src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js")
     rdoc.head += script(src="https://cdn.datatables.net/1.10.15/js/dataTables.bootstrap.min.js")
 
-    result = g.query("""SELECT DISTINCT ?p ?o ?plabel ?olabel
+    result = g.query("""SELECT DISTINCT ?p ?o ?plabel ?olabel ?porder
            WHERE {
              
             { ramphs:%s geojson:properties [ ?p ?o ] }
             UNION { ramphs:%s geojson:properties/ramphsprops:dimensions [ ?p ?o ] }
             UNION { ramphs:%s geojson:properties/ramphsprops:capacity   [ ?p ?o ] }
             OPTIONAL { ?p rdfs:label ?plabel }
+            OPTIONAL { ?o rdfs:label ?olabel }
+            OPTIONAL { ?p ramphsprops:x-sort-order ?porder }
             
-           } """ % (amphitheater,amphitheater,amphitheater), initNs = ns)
+            FILTER (!isBlank(?o))
+            
+           } ORDER BY ?porder """ % (amphitheater,amphitheater,amphitheater), initNs = ns)
            
     with rdoc:
         with nav(cls="navbar navbar-default"):

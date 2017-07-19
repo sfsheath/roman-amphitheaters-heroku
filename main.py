@@ -29,14 +29,16 @@ import pymysql.cursors
 import rdflib
 
 # testing
-local_source = str(os.environ.get('GEOJSON')),
+local_source = str(os.environ.get('GEOJSON')).rstrip()
 
 # load triples from local or remote source 
 g = rdflib.Graph()
 if local_source == 'local':
     result = g.parse('roman-amphitheaters.geojson', format="json-ld")
+    local_source = "local (loaded)"
 else:
     result = g.load("http://sfsheath.github.io/roman-amphitheaters/roman-amphitheaters.geojson", format="json-ld")
+    local_source = "(not loaded)"
 
 # namespace
 ns = {"dcterms" : "http://purl.org/dc/terms/",
@@ -260,23 +262,17 @@ def ramphs_id(amphitheater):
            } """ % (amphitheater,amphitheater,amphitheater), initNs = ns)
            
     with rdoc:
-        with nav(cls="navbar navbar-default navbar-fixed-top"):
-           with div(cls="container-fluid"):
+        with nav(cls="navbar navbar-default"):
+           with div(cls="container"):
                with div(cls="navbar-header"):
                    a("Roman Amphitheaters", href="/",cls="navbar-brand")
                    with ul(cls="nav navbar-nav"):
                        with li(cls="dropdown"):
-                           a("Browse", href="#",cls="dropdown-toggle", data_toggle="dropdown")
+                           a("Go To List", href="#",cls="dropdown-toggle", data_toggle="dropdown")
                            with ul(cls="dropdown-menu", role="menu"):
                                li(a('Go to Pompeii', href="/ramphs/id/pompeiiAmphitheater"))
     
         with div(cls="container", about="/ramphs/id/%s" % (amphitheater)):
-            p()
-            p()
-            p()
-            p()
-            p()
-            p()
             with dl(cls="dl-horizontal"):
                 unescapehtml = False
                 dt()
@@ -290,23 +286,27 @@ def ramphs_id(amphitheater):
                         dt(str(row.plabel))
                     else:
                         dt(i(str(row.p)))
-                
+
                     with dd():
-                        if str(row.olabel) != "None":
-                            olabel = str(row.olabel)
+                        if str(row.p) == 'http://purl.org/roman-amphitheaters/properties#youtube':
+                            yt = str(row.o).replace('https://www.youtube.com/watch?v=','')
+                            iframe(width = "560",
+                                   height = "315",
+                                   src = "https://www.youtube.com/embed/%s" % yt ,
+                                   frameborder = "0",
+                                   allowfullscreen = "yes")
                         else:
-                            olabel = str(row.o)
-                        span(olabel)
+                            if str(row.olabel) != "None":
+                                olabel = str(row.olabel)
+                            else:
+                                olabel = str(row.o)
+                            span(olabel)
 
                 
         with footer(cls="footer"):
             with div(cls="container"):
                 with p(cls="text-muted"):
-                    span("P-LOD is under construction and is overseen by Steven Ellis, Sebastian Heath and Eric Poehler. Data available on ")
-                    a("Github", href = "https://github.com/p-lod/p-lod")
-                    span(". Parse ")
-                    a('RDFa', href="http://www.w3.org/2012/pyRdfa/extract?uri=http://p-lod.herokuapp.com/p-lod/entities/%s" % (amphitheater))
-                    span(".")
+                    span("This site is under construction by Sebastian Heath.")
         
     return rdoc.render()         
         

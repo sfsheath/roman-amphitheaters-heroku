@@ -301,7 +301,7 @@ def ramphs_id(amphitheater):
                         elif str(row.p) == 'http://purl.org/roman-amphitheaters/properties#commons-image':
                             img(src=str(row.o))
                         elif str(row.p) == 'http://purl.org/roman-amphitheaters/properties#pleiades':
-                            a(str(row.o), href=str(row.o))
+                            a(str(row.o), href=str(row.o)) 
                         else:
                             if str(row.olabel) != "None":
                                 olabel = str(row.olabel)

@@ -313,8 +313,10 @@ def ramphs_id(amphitheater):
         with footer(cls="footer"):
             with div(cls="container"):
                 with p(cls="text-muted"):
-                    span("This site is under construction by Sebastian Heath.")
-        
+                    span("This site is under construction by Sebastian Heath. ")
+                    a("Data and discussion", href="https://github.com/sfsheath/roman-amphitheaters")
+                    span(".")
+                    
     return rdoc.render()         
         
 # display a popup list of amphitheaters
